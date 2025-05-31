@@ -1,0 +1,28 @@
+{
+  "name": "nodejs-docker-app",
+  "version": "1.0.0",
+  "description": "Production Node.js application with Docker",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.6.0",
+    "redis": "^4.6.0",
+    "helmet": "^7.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "compression": "^1.7.4",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.7.0"
+  },
+  "keywords": ["nodejs", "docker", "mongodb", "redis", "express"],
+  "author": "Your Name",
+  "license": "MIT"
+}

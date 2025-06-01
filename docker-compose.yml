@@ -3,7 +3,7 @@
 # Best practices: Network segmentation, secrets management, health checks, resource limits
 
 # Docker Secrets for secure credential management
-secrets: # todo - how does it exactly work?
+secrets:
   mongodb_root_password:
     external: false
     file: ./secrets/mongodb_root_password.txt
@@ -72,7 +72,7 @@ services:
   # EXPRESS APP - Node.js Application Server
   # ================================
   express-app:
-    image: node:22.16.0-alpine3.22  # Specific version for production stability
+    build: ./src
     container_name: express_app
     hostname: express-app
     restart: unless-stopped
@@ -90,13 +90,12 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - REDIS_URL=redis://redis:6379
-      - REDIS_PASSWORD_FILE=/run/secrets/redis_password
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - LOG_LEVEL=info
       - MAX_CONNECTIONS=100
     
     # Volume mounts for development and uploads
     volumes:
-      - ./src:/home/node/app  # Read-only source code mount
       - app_uploads:/home/node/uploads
       - ./logs:/home/node/logs
     
@@ -106,6 +105,19 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+    develop:  # Compose Watch configuration section
+      watch:
+        - action: sync+restart
+          path: ./src
+          target: /home/node/app/src
+          ignore:
+            - .env
+            - '*.json'
+            - node_modules/
+            - Dockerfile
+        - action: rebuild
+          path: ./package-lock.json
     
     # Resource constraints  
     deploy:
@@ -402,8 +414,9 @@ services:
     
     # RedisInsight configuration
     environment:
-      - RIPROXYENABLE=true
-      - RIPROXYPORT=5540
+      - RI_REDIS_HOST=redis
+      - RI_REDIS_PORT=6379
+      - RI_REDIS_PASSWORD=${REDIS_PASSWORD}
     
     # Persistent configuration storage
     volumes:

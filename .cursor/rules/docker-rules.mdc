@@ -3,69 +3,64 @@ description: This rule should be used when working with Dockerfiles and docker-c
 globs: 
 alwaysApply: false
 ---
-1. **Use Official Base Images**  
-   Always prefer official Docker images from trusted sources over custom or unofficial alternatives.
+- **Dockerfile Rules**
+  - Use official base images from trusted repositories
+  - Specify exact image tags (avoid 'latest')
+  - Implement multi-stage builds
+  - Create non-root user with UID >10000
+  - Combine RUN commands to minimize layers
+  - Place COPY commands after dependency installation
+  - Use .dockerignore to exclude unnecessary files
+  - Add HEALTHCHECK instruction with interval/timeout/retries
+  - Use COPY instead of ADD unless extracting archives
+  - Install security updates during build process
 
-2. **Specify Exact Image Tags**  
-   Never use the `latest` tag in production. Always specify concrete version numbers for reproducible builds.
+- **Docker Compose Rules**
+  - Remove obsolete 'version' field
+  - Specify exact image tags in service definitions
+  - Create separate networks for frontend/backend/database
+  - Use named volumes for persistent data storage
+  - Store credentials in Docker secrets (not environment variables)
+  - Set explicit CPU/memory limits per service
+  - Add healthcheck configuration to each service
+  - Use 'unless-stopped' restart policy for non-critical services
+  - Use 'always' restart policy for essential services
+  - Implement environment variables for non-sensitive configuration
+  - Use Docker Compose profiles for environment-specific services
+  - Avoid bind mounts in production environments
 
-3. **Choose Minimal Base Images**  
-   Select the smallest base image that meets your requirements to reduce attack surface and improve performance.
+- **Network Security Rules**
+  - Never expose database ports publicly
+  - Isolate services using custom networks
+  - Never place entire stack in default network
+  - Configure firewall rules between network segments
 
-4. **Implement Multi-Stage Builds**  
-   Use multi-stage builds to separate build dependencies from runtime requirements, resulting in smaller and more secure final images.
+- **Build Optimization Rules**
+  - Use Alpine or distroless base images when possible
+  - Clean package caches after installation
+  - Remove temporary build dependencies
+  - Leverage build cache through strategic layer ordering
 
-5. **Run as Non-Root User**  
-   Create and use a non-privileged user to run your application, avoiding root privileges.
+- **Runtime Security Rules**
+  - Never run containers as root user
+  - Set filesystem to read-only where possible
+  - Disable inter-container communication by default
+  - Use seccomp/apparmor security profiles
 
-6. **Avoid Unnecessary Privileges**  
-   Follow the principle of least privilege by only granting permissions necessary for your application to function.
+- **Secret Management Rules**
+  - Use Docker secrets for API keys/passwords
+  - Mount secrets as files (not environment variables)
+  - Rotate secrets through orchestration platform
+  - Never commit secret files to version control
 
-7. **Minimize Docker Layers**  
-   Combine related RUN commands to reduce the number of layers and overall image size.
+- **Environment Configuration Rules**
+  - Use single docker-compose.yml with profiles
+  - Create docker-compose.override.yml for local dev
+  - Activate profiles using --profile flag
+  - Example: `docker compose --profile debug up`
 
-8. **Order Commands Strategically**  
-   Place frequently changing instructions (like COPY source code) at the end of the Dockerfile to leverage Docker's layer caching.
-
-9. **Use COPY Instead of ADD**  
-   Prefer COPY over ADD unless you specifically need ADD's additional features.
-
-10. **Implement .dockerignore**  
-    Create a .dockerignore file to exclude unnecessary files from the build context, reducing build time and image size.
-
-11. **Include Health Checks**  
-    Add HEALTHCHECK instructions to enable Docker to monitor container health.
-
-12. **Remove Obsolete Version Declaration**  
-    The version field in Docker Compose files is now obsolete and should be removed to avoid confusion.
-
-13. **Use Specific Image Tags**  
-    Always specify exact image versions in Docker Compose files, never use the `latest` tag.
-
-14. **Keep Services Modular**  
-    Design each service with a single responsibility and avoid combining unrelated functionality.
-
-15. **Implement Network Segmentation**  
-    Create custom networks to isolate services and prevent unnecessary communication between unrelated components.
-
-16. **Use Named Volumes**  
-    Implement named volumes for data persistence instead of bind mounts in production.
-
-17. **Leverage Environment Variables**  
-    Use environment variables and .env files for configuration management, especially for sensitive data.
-
-18. **Use Docker Secrets for Sensitive Data**  
-    Implement Docker secrets or external secret management for handling passwords and API keys.
-
-19. **Define Resource Limits**  
-    Set appropriate CPU and memory limits to prevent resource contention.
-
-20. **Configure Restart Policies**  
-    Implement appropriate restart policies based on service requirements.
-
-21. **Implement Health Checks**  
-    Add health checks to monitor service availability and enable automatic recovery.
-
-22. **Avoid Multiple Compose Files**  
-
-    When possible, use a single compose file with environment variables rather than multiple environment-specific files. Use docker profiles or `docker-compose.override.yml` for local development overrides.
+- **Prohibited Practices**
+  - Never use latest tag in production
+  - Never store secrets in Dockerfiles
+  - Never expose Docker socket to containers
+  - Never run unnecessary privileged capabilities

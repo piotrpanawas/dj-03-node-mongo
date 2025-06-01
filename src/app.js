@@ -160,6 +160,90 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
+// Add this POST endpoint after your existing GET /api/products route
+
+// POST endpoint to create a new product
+app.post('/api/products', async (req, res) => {
+  try {
+    const { name, price, description } = req.body;
+
+    // Validate required fields
+    if (!name || !price) {
+      return res.status(400).json({
+        success: false,
+        error: 'Name and price are required fields'
+      });
+    }
+
+    // Validate price is a number
+    if (isNaN(price) || price < 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Price must be a valid positive number'
+      });
+    }
+
+    // Create new product in MongoDB
+    const newProduct = new Product({
+      name: name.trim(),
+      price: parseFloat(price),
+      description: description ? description.trim() : ''
+    });
+
+    const savedProduct = await newProduct.save();
+    console.log('✅ Product created in MongoDB:', savedProduct._id);
+
+    // Update Redis cache
+    const cacheKey = 'products';
+    if (redisClient && redisClient.isReady) {
+      try {
+        // Get all products from database (including the new one)
+        const allProducts = await Product.find({});
+        
+        // Update the cache with all products
+        await redisClient.set(cacheKey, JSON.stringify(allProducts), { EX: 3600 });
+        console.log('✅ Redis cache updated with new product');
+      } catch (redisError) {
+        console.error('❌ Redis cache update error:', redisError.message);
+        // Continue without cache update - product was still saved to DB
+      }
+    } else {
+      console.log('⚠️ Redis not available - cache not updated');
+    }
+
+    // Return success response
+    res.status(201).json({
+      success: true,
+      data: savedProduct,
+      message: 'Product created successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ Error creating product:', error);
+    
+    // Handle MongoDB validation errors
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error: ' + error.message
+      });
+    }
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        error: 'Product with this name already exists'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

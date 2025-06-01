@@ -20,6 +20,10 @@ app.use(express.urlencoded({ extended: true }));
 // MongoDB connection
 const connectMongoDB = async () => {
   try {
+    console.log(new Date().toISOString());
+    console.log(process.env.MONGODB_URI);
+    console.log(process.env.MONGODB_APP_PASSWORD);
+
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/products');
     console.log('✅ Connected to MongoDB');
   } catch (error) {

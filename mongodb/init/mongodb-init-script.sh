@@ -1,52 +1,56 @@
-// MongoDB initialization script for products database
-// This script runs automatically when MongoDB container starts for the first time
-// Place this file in ./mongodb/init/ directory
+#!/bin/bash
+## MongoDB Initialization Script
+## Place in ./mongodb/init/ directory (make executable with chmod +x)
 
-// Switch to the products database
+set -e # Exit on any error
+
+# Read application password from Docker secret
+APP_PASSWORD=$(cat /run/secrets/mongodb_app_password)
+
+# Execute MongoDB initialization commands
+mongosh --quiet <<EOF
+// Switch to products database
 db = db.getSiblingDB('products');
 
-// Read the app password from the mounted secret
-var appPassword = cat('/run/secrets/mongodb_app_password');
-
-// Create application user with readWrite permissions
+// Create application user with proper permissions
 db.createUser({
   user: "app_user",
-  pwd: appPassword.trim(),
+  pwd: "$APP_PASSWORD",
   roles: [
-    {
-      role: "readWrite",
-      db: "products"
-    },
-    {
-      role: "dbAdmin",
-      db: "products"
-    }
+    { role: "readWrite", db: "products" },
+    { role: "dbAdmin", db: "products" }
   ]
 });
 
-// Create initial collections with indexes
+// Collection creation
 db.createCollection("products");
 db.createCollection("categories");
 db.createCollection("users");
 db.createCollection("orders");
 
-// Create indexes for better performance
-db.products.createIndex({ "name": 1 });
-db.products.createIndex({ "category": 1 });
-db.products.createIndex({ "price": 1 });
-db.products.createIndex({ "createdAt": -1 });
+// Indexes for optimal query performance
+db.products.createIndexes([
+  { "name": 1 },
+  { "category": 1 },
+  { "price": 1 },
+  { "createdAt": -1 }
+]);
 
 db.categories.createIndex({ "name": 1 }, { unique: true });
 
-db.users.createIndex({ "email": 1 }, { unique: true });
-db.users.createIndex({ "username": 1 }, { unique: true });
+db.users.createIndexes([
+  { "email": 1, unique: true },
+  { "username": 1, unique: true }
+]);
 
-db.orders.createIndex({ "userId": 1 });
-db.orders.createIndex({ "status": 1 });
-db.orders.createIndex({ "createdAt": -1 });
+db.orders.createIndexes([
+  { "userId": 1 },
+  { "status": 1 },
+  { "createdAt": -1 }
+]);
 
-// Insert sample data for testing
-db.categories.insertMany([
+// Sample data insertion
+var categories = db.categories.insertMany([
   {
     _id: ObjectId(),
     name: "Electronics",
@@ -67,19 +71,17 @@ db.categories.insertMany([
   }
 ]);
 
-// Get category IDs for product insertion
-var electronicsCategory = db.categories.findOne({ name: "Electronics" })._id;
-var booksCategory = db.categories.findOne({ name: "Books" })._id;
-var clothingCategory = db.categories.findOne({ name: "Clothing" })._id;
+var electronicsId = db.categories.findOne({name: "Electronics"})._id;
+var booksId = db.categories.findOne({name: "Books"})._id;
+var clothingId = db.categories.findOne({name: "Clothing"})._id;
 
-// Insert sample products
 db.products.insertMany([
   {
     _id: ObjectId(),
     name: "Smartphone",
     description: "High-end smartphone with excellent camera",
     price: 699.99,
-    category: electronicsCategory,
+    category: electronicsId,
     inStock: true,
     quantity: 50,
     tags: ["electronics", "mobile", "communication"],
@@ -97,7 +99,7 @@ db.products.insertMany([
     name: "Programming Fundamentals",
     description: "Complete guide to programming fundamentals",
     price: 49.99,
-    category: booksCategory,
+    category: booksId,
     inStock: true,
     quantity: 100,
     tags: ["book", "programming", "education"],
@@ -115,7 +117,7 @@ db.products.insertMany([
     name: "Cotton T-Shirt",
     description: "Comfortable cotton t-shirt for casual wear",
     price: 19.99,
-    category: clothingCategory,
+    category: clothingId,
     inStock: true,
     quantity: 200,
     tags: ["clothing", "casual", "cotton"],
@@ -129,14 +131,14 @@ db.products.insertMany([
   }
 ]);
 
-// Insert sample user for testing
+// Test user insertion
 db.users.insertOne({
   _id: ObjectId(),
   username: "testuser",
   email: "test@example.com",
   firstName: "Test",
   lastName: "User",
-  hashedPassword: "$2b$10$example_hashed_password",
+  hashedPassword: "$2b\$10\$example_hashed_password",
   role: "user",
   isActive: true,
   profile: {
@@ -157,9 +159,9 @@ db.users.insertOne({
   updatedAt: new Date()
 });
 
-// Create a test order
-var testUser = db.users.findOne({ username: "testuser" });
-var smartphone = db.products.findOne({ name: "Smartphone" });
+// Test order creation
+var testUser = db.users.findOne({username: "testuser"});
+var smartphone = db.products.findOne({name: "Smartphone"});
 
 db.orders.insertOne({
   _id: ObjectId(),
@@ -190,9 +192,6 @@ db.orders.insertOne({
   deliveredAt: new Date()
 });
 
-// Log successful initialization
-print("MongoDB products database initialized successfully!");
-print("Created collections: products, categories, users, orders");
-print("Created application user: app_user");
-print("Inserted sample data for testing");
-print("Database is ready for use!");
+EOF
+
+echo "✅ Database initialization completed successfully!"

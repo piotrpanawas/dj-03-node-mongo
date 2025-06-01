@@ -11,7 +11,7 @@ if ! command -v docker-compose &> /dev/null; then
 fi
 
 # Check if all required files exist
-required_files=("docker-compose.yml" "secrets/mongodb_root_password.txt" "secrets/redis_password.txt")
+required_files=("docker-compose.yml" "secrets/mongodb_root_password.txt" "secrets/redis_password.txt" "secrets/mongodb_app_password.txt" "secrets/mongo_express_password.txt")
 for file in "${required_files[@]}"; do
     if [ ! -f "$file" ]; then
         echo "❌ Required file missing: $file"
@@ -19,6 +19,12 @@ for file in "${required_files[@]}"; do
         exit 1
     fi
 done
+
+# Load secrets as environment variables
+export MONGODB_ROOT_PASSWORD=$(cat ./secrets/mongodb_root_password.txt)
+export MONGODB_APP_PASSWORD=$(cat ./secrets/mongodb_app_password.txt)
+export REDIS_PASSWORD=$(cat ./secrets/redis_password.txt)
+export MONGO_EXPRESS_PASSWORD=$(cat ./secrets/mongo_express_password.txt)
 
 # Pull latest images
 echo "📥 Pulling latest Docker images..."

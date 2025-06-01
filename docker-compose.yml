@@ -2,8 +2,6 @@
 # Includes: Express App, MongoDB, Mongo Express, Redis, Redis UI
 # Best practices: Network segmentation, secrets management, health checks, resource limits
 
-version: '3.8'
-
 # Docker Secrets for secure credential management
 secrets:
   mongodb_root_password:
@@ -74,7 +72,7 @@ services:
   # EXPRESS APP - Node.js Application Server
   # ================================
   express-app:
-    image: node:22.13.1-alpine3.20  # Specific version for production stability
+    image: node:22.16.0-alpine3.22  # Specific version for production stability
     container_name: express_app
     hostname: express-app
     restart: unless-stopped
@@ -99,9 +97,9 @@ services:
     
     # Volume mounts for development and uploads
     volumes:
-      - ./src:/home/node/app:ro  # Read-only source code mount
-      - app_uploads:/home/node/app/uploads
-      - ./logs:/home/node/app/logs
+      - ./src:/home/node/app  # Read-only source code mount
+      - app_uploads:/home/node/uploads
+      - ./logs:/home/node/logs
     
     # Service dependencies with health checks
     depends_on:
@@ -110,7 +108,7 @@ services:
       redis:
         condition: service_healthy
     
-    # Resource constraints
+    # Resource constraints  
     deploy:
       resources:
         limits:
@@ -154,12 +152,15 @@ services:
       environment: "production"
       version: "1.0.0"
       description: "Main Node.js application server"
+    
+    # Command to run the server
+    command: node app.js
 
   # ================================
   # MONGODB - Primary Database
   # ================================
   mongodb:
-    image: mongodb/mongodb-community-server:7.0.14-ubuntu2204  # Stable production version
+    image: mongodb/mongodb-community-server:8.0.4-ubuntu2204  # Stable production version
     container_name: mongodb_server
     hostname: mongodb
     restart: unless-stopped
@@ -226,11 +227,11 @@ services:
     labels:
       service: "mongodb"
       environment: "production"
-      version: "7.0.14"
+      version: "8.0.4"
       description: "Primary MongoDB database server"
 
   # ================================
-  # MONGO EXPRESS - Web-based MongoDB Admin Interface
+  # MONGO EXPRESS - Web-based MongoDB Admin Interfaceś
   # ================================
   mongo-express:
     image: mongo-express:1.0.2-20-alpine3.19  # Specific stable version
@@ -309,7 +310,7 @@ services:
   # REDIS - Caching Layer
   # ================================
   redis:
-    image: redis:7.4.4-alpine3.20  # Latest stable Alpine version
+    image: redis:7.4.4-alpine3.21  # Using a stable Alpine version
     container_name: redis_server
     hostname: redis
     restart: unless-stopped
@@ -390,7 +391,7 @@ services:
   # REDIS INSIGHT - Redis Management Interface
   # ================================
   redis-insight:
-    image: oblakstudio/redisinsight:2.58.0  # Community-maintained RedisInsight v2
+    image: redis/redisinsight:2.70.0  # Using the official Redis Insight image
     container_name: redis_insight
     hostname: redis-insight
     restart: unless-stopped
@@ -455,7 +456,7 @@ services:
     labels:
       service: "redis-insight"
       environment: "production"
-      version: "2.58.0"
+      version: "2.70.0"
       description: "Redis management and monitoring interface"
 
 # ================================
